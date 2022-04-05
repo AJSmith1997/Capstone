@@ -4,7 +4,7 @@ from flask_marshmallow import Marshmallow
 from flask_cors import CORS
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://biqhualriwkteu:7b0aafffa35665ba7417f2e9c6a54cd4d5f6a15aa8340c7acbb779f92bebea75@ec2-44-192-245-97.compute-1.amazonaws.com:5432/d363duf4ilahub"
+app.config["SQLALCHEMY_DATABASE_URI"] = "postgresql://knxhprornpmgmg:300344413e79cd40922f039d50374b8c5bdb1a060c6519861740a9a2ec6c8310@ec2-44-195-191-252.compute-1.amazonaws.com:5432/d7q82an41ckn05"
 db = SQLAlchemy(app)
 ma = Marshmallow(app)
 CORS(app)
@@ -21,17 +21,15 @@ class Data(db.Model):
         self.email = email
         self.password = password
 
+class Task(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    text = db.Column(db.String, nullable = False)
 
-        
 
-# class Date(db.Model):
-#     id = db.Column(db.Integer, primary_key = True)
-#     day = db.Column(db.Integer, nullable = False)
-#     quote = db.Column(db.Integer, nullable = False)
+    def __init__(self, text):
+        self.text = text
 
-    # def __init__(self,day, quote):
-    #     self.day = day
-    #     self.quote = quote
+
 
 
 class DataSchema(ma.Schema):
@@ -41,13 +39,88 @@ class DataSchema(ma.Schema):
 data_schema = DataSchema()
 multiple_data_schema = DataSchema(many = True)
 
+
+class TaskSchema(ma.Schema):
+    class Meta:
+        fields = ( "id", "text")
+
+task_schema = TaskSchema()
+multiple_task_schema = TaskSchema(many = True)
+
+
+@app.route("/task/add", methods = ["POST"])
+def add_task():
+    if request.content_type != "application/json":
+        return jsonify("ERROR Data must be sent as JSON.")
+
+    post_data = request.get_json()
+    text = post_data.get("text")
+   
+
+    record = Task(text)
+    db.session.add(record)
+    db.session.commit()
+
+    return jsonify(task_schema.dump(record))
+
+
+
+@app.route("/task/get", methods = ["GET"])
+def get_all_tasks():
+    
+   
+
+    records = db.session.query(Task).all()
+    return jsonify(multiple_task_schema.dump(records))
+
+
+@app.route("/task/get/<id>", methods = ["GET"])
+def get_task_by_id(id):
+    
+
+    record = db.session.query(Task).filter(Task.id == id).first()
+    return jsonify(task_schema.dump(record))
+
+
+@app.route("/task/update/<id>", methods = ["PUT"])
+def update_task(id):
+    record = db.session.query(Task).filter(Task.id == id).first()
+    if record is None:
+        return jsonify(F"No task with id {id}")
+
+
+    put_data = request.get_json()
+    text = put_data.get("text")
+    
+    
+
+
+    db.session.commit()
+    return jsonify(task_schema.dump(record))
+
+
+
+
+@app.route("/task/delete/<id>", methods = ["DELETE"])
+def delete_task(id):
+    if request.content_type != "application/json":
+        return jsonify("ERROR Data must be sent as JSON.")
+
+    
+    record = db.session.query(Task).filter(Task.id == id).first()
+    db.session.delete(record)
+    db.session.commit()
+    return jsonify(task_schema.dump(record))
+
+
+
+
 @app.route("/user/add", methods = ["POST"])
 def add_user():
     if request.content_type != "application/json":
         return jsonify("ERROR Data must be sent as JSON.")
 
     post_data = request.get_json()
-    # id = post_data.get(id)
     name = post_data.get("name")
     email = post_data.get("email")
     password = post_data.get("password")
@@ -68,7 +141,6 @@ def get_all_users():
         return jsonify("ERROR Data must be sent as JSON.")
 
     post_data = request.get_json()
-    # id = post_data.get(id)
     name = post_data.get("name")
     email = post_data.get("email")
     password = post_data.get("password")
@@ -118,6 +190,9 @@ def delete_user(id):
     db.session.delete(record)
     db.session.commit()
     return jsonify(data_schema.dump(record))
+
+
+
 
 
 

@@ -50,7 +50,8 @@ multiple_task_schema = TaskSchema(many = True)
 
 @app.route("/task/add", methods = ["POST"])
 def add_task():
-    if request.content_type != "application/json":
+    if request.content_type != "application/json;charset=UTF-8": 
+        print("this is working", request.content_type)
         return jsonify("ERROR Data must be sent as JSON.")
 
     post_data = request.get_json()
